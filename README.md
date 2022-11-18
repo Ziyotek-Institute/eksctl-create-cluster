@@ -758,7 +758,7 @@ aws iam detach-role-policy --role-name $NODE_ROLE_NAME --policy-arn $POLICY_ARN
 If the cluster was provisioned using `eksctl`, you can delete the cluster with:
 
 ```bash
-eksctl delete cluster --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION
+eksctl delete cluster --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION --wait
 ```
 
 Give ExternalDNS some time to clean up the DNS records for you. Then delete the hosted zone if you created one for the testing purpose.
