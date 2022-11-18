@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  labels:
+    app.kubernetes.io/name: external-dns
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: external-dns
+    spec:
+      containers:
+        - name: external-dns
+          image: k8s.gcr.io/external-dns/external-dns:v0.11.0
+          args:
+            - --source=service
+            - --source=ingress
+            - --domain-filter=example.com # will make ExternalDNS see only the hosted zones matching provided domain, omit to process all available hosted zones
+            - --provider=aws
+            - --policy=upsert-only # would prevent ExternalDNS from deleting any records, omit to enable full synchronization
+            - --aws-zone-type=public # only look at public hosted zones (valid values are public, private or no value for both)
+            - --registry=txt
+            - --txt-owner-id=Z0018530333ZM5MP7G8FQ
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: us-east-2 # change to region where EKS is installed
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: ./credentials
+          volumeMounts:
+            - name: aws-credentials
+              mountPath: /.aws
+              readOnly: true
+      volumes:
+        - name: aws-credentials
+          secret:
+            secretName: external-dns

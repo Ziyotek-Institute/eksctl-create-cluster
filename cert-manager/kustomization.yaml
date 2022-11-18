@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+
+resources:
+  - secret.yaml
+  - echo-ingress.yaml
+  - clusterissuer-dns01.yaml
+  - echo-http.yaml
+  - https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.yaml
