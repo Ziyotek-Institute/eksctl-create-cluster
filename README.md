@@ -749,8 +749,10 @@ For any given DNS name, only **one** of the following routing policies can be us
 
 Make sure to delete all Service objects before terminating the cluster so all load balancers get cleaned up correctly.
 
+Delete nginx-ingress-controller, if this step is not done Cluster will not be able to destroy every component because Load Balancer will not be deleted. Use this step to delete gracefully
+
 ```bash
-kubectl delete service nginx
+kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/aws/deploy.yaml
 ```
 
 **IMPORTANT** If you attached a policy to the Node IAM Role, then you will want to detach this before deleting the EKS cluster.  Otherwise, the role resource will be locked, and the cluster cannot be deleted, especially if it was provisioned by automation like `terraform` or `eksctl`.
