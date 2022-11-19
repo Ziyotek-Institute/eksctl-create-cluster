@@ -104,10 +104,10 @@ From the command line, if you have a single managed node group, the default with
 GROUP_NAME=$(aws eks list-nodegroups --cluster-name $EKS_CLUSTER_NAME \
   --query nodegroups --out text)
 # fetch role arn given node group name
-ROLE_ARN=$(aws eks describe-nodegroup --cluster-name $EKS_CLUSTER_NAME \
+NODE_ROLE_ARN=$(aws eks describe-nodegroup --cluster-name $EKS_CLUSTER_NAME \
   --nodegroup-name $GROUP_NAME --query nodegroup.nodeRole --out text)
 # extract just the name part of role arn
-ROLE_NAME=${ROLE_ARN##*/}
+NODE_ROLE_NAME=${ROLE_ARN##*/}
 ```
 
 :warning: **WARNING**: This will assign allow read-write access to all pods running on the same node pool, not just the ExternalDNS pod(s).
