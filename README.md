@@ -644,6 +644,10 @@ For this tutorial, we have two endpoints, the service with `LoadBalancer` type a
 
 **IMPORTANT**: This requires that an ingress controller has been installed in your Kubernetes cluster.  EKS does not come with an ingress controller by default.  A popular ingress controller is [ingress-nginx](https://github.com/kubernetes/ingress-nginx/), which can be installed by a [helm chart](https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx) or by [manifests](https://kubernetes.github.io/ingress-nginx/deploy/#aws).
 
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/aws/deploy.yaml
+```
+
 Create an ingress resource manifest file named `ingress.yaml` with the contents below:
 
 ```yaml
