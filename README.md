@@ -56,7 +56,7 @@ You can use [eksctl](https://eksctl.io) to easily provision an [Amazon Elastic K
 
 
 ```bash
-export EKS_CLUSTER_NAME="my-externaldns-cluster"
+export EKS_CLUSTER_NAME="devops-203"
 export EKS_CLUSTER_REGION="us-east-2"
 export KUBECONFIG="$HOME/.kube/${EKS_CLUSTER_NAME}-${EKS_CLUSTER_REGION}.yaml"
 
