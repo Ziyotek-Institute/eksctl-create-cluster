@@ -40,8 +40,4 @@ spec:
      #  volumes:
      #    - name: aws-credentials
      #      secret:
-<<<<<<< HEAD
      #        secretName: external-dns
-=======
-     #        secretName: external-dns
->>>>>>> 71476ca (Update README.md)
