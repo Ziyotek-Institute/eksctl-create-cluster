@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: "2022-11-26T00:48:50Z"
+  labels:
+    app.kubernetes.io/component: csi-driver
+    app.kubernetes.io/managed-by: EKS
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/version: 1.13.0
+  name: ebs-csi-node-getter-binding
+  resourceVersion: "61410"
+  uid: 186feeb3-bf51-41f4-9b71-8da3e202224c
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ebs-csi-node-role
+subjects:
+- kind: ServiceAccount
+  name: ebs-csi-node-sa
+  namespace: kube-system

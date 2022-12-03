@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2022-11-26T00:48:48Z"
+  labels:
+    app.kubernetes.io/component: csi-driver
+    app.kubernetes.io/managed-by: EKS
+    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/version: 1.13.0
+  name: ebs-csi-node-sa
+  namespace: kube-system
+  resourceVersion: "61396"
+  uid: 760f56c0-e9a5-4821-bc76-2a9e0496fb6b
+secrets:
+- name: ebs-csi-node-sa-token-k8w4l
