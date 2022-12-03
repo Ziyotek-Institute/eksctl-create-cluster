@@ -96,6 +96,32 @@ aws iam add-user-to-group --user-name letsencrypt-wildcard --group-name letsencr
 aws iam create-access-key --user-name letsencrypt-wildcard # COPY and SAVE the output of this command
 
 ```
+## Add AccessKeyID to clusterissuer-dns01.yaml
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    email: cggor8@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory  
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      name: letsencrypt-account-key    
+    solvers:
+    - selector:
+        dnsZones:
+          - "kubeshore.com"
+      dns01:
+        route53:
+          region: us-east-2
+          accessKeyID: <ACCESSKEYID> # Insert Access Key ID from the output of aws iam create-access-key
+          secretAccessKeySecretRef:
+            name: route53-credentials-secret
+            key: secret-access-key
+```
 
 ## Create kubernetes secret.yaml in cert-manager namespace.
 
