@@ -67,17 +67,10 @@ Feel free to use other provisioning tools or an existing cluster.  If [Terraform
 
 ## Permissions to modify DNS zone
 
-You will need to use the above policy (represented by the `POLICY_ARN` environment variable) to allow ExternalDNS to update records in Route53 DNS zones. Here are three common ways this can be accomplished:
-
-* [Node IAM Role](#node-iam-role)
-* [Static credentials](#static-credentials)
-* [IAM Roles for Service Accounts](#iam-roles-for-service-accounts)
+You will need to use the above policy (represented by the `POLICY_ARN` environment variable) to allow ExternalDNS to update records in Route53 DNS zones. 
 
 For this tutorial, ExternalDNS will use the environment variable `EXTERNALDNS_NS` to represent the namespace, defaulted to `default`.  Feel free to change this to something else, such `externaldns` or `kube-addons`.  Make sure to edit the `subjects[0].namespace` for the `ClusterRoleBinding` resource when deploying ExternalDNS with RBAC enabled.  See [Manifest (for clusters with RBAC enabled)](#manifest-for-clusteres-with-rbac-enabled)  for more information.
 
-### Node IAM Role
-
-In this method, you can attach a policy to the Node IAM Role.  This will allow nodes in the Kubernetes cluster to access Route53 zones, which allows ExternalDNS to update DNS records.  Given that this allows all containers to access Route53, not just ExternalDNS, running on the node with these privileges, this method is not recommended, and is only suitable for limited limited test environments.
 
 If you are using eksctl to provision a new cluster, you add the policy at creation time with:
 
@@ -85,65 +78,6 @@ If you are using eksctl to provision a new cluster, you add the policy at creati
 eksctl create cluster --external-dns-access \
   --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION \
 ```
-
-
-:warning: **WARNING**: This will assign allow read-write access to all nodes in the cluster, not just ExternalDNS.  For this reason, this method is only suitable for limited test environments.
-
-If you already provisioned a cluster or use other provisioning tools like Terraform, you can use AWS CLI to attach the policy to the Node IAM Role.
-
-#### Get the Node IAM role name
-
-The role name of the role associated with the node(s) where ExternalDNS will run is needed.  An easy way to get the role name is to use the AWS web console (https://console.aws.amazon.com/eks/), and find any instance in the target node group and copy the role name associated with that instance.
-
-##### Get role name with a single managed nodegroup
-
-From the command line, if you have a single managed node group, the default with `eksctl create cluster`, you can find the role name with the following:
-
-```bash
-# get managed node group name (assuming there's only one node group)
-GROUP_NAME=$(aws eks list-nodegroups --cluster-name $EKS_CLUSTER_NAME \
-  --query nodegroups --out text)
-# fetch role arn given node group name
-NODE_ROLE_ARN=$(aws eks describe-nodegroup --cluster-name $EKS_CLUSTER_NAME \
-  --nodegroup-name $GROUP_NAME --query nodegroup.nodeRole --out text)
-# extract just the name part of role arn
-NODE_ROLE_NAME=${ROLE_ARN##*/}
-```
-
-:warning: **WARNING**: This will assign allow read-write access to all pods running on the same node pool, not just the ExternalDNS pod(s).
-
-#### Create IAM user and attach the policy
-
-```bash
-# create IAM user
-aws iam create-user --user-name "externaldns"
-
-# attach policy arn created earlier to IAM user
-aws iam attach-user-policy --user-name "externaldns" --policy-arn $POLICY_ARN
-```
-
-#### Create the static credentials
-
-```bash
-SECRET_ACCESS_KEY=$(aws iam create-access-key --user-name "externaldns")
-cat <<-EOF > ./credentials
-
-[default]
-aws_access_key_id = $(echo $SECRET_ACCESS_KEY | jq -r '.AccessKey.AccessKeyId')
-aws_secret_access_key = $(echo $SECRET_ACCESS_KEY | jq -r '.AccessKey.SecretAccessKey')
-EOF
-```
-
-#### Create Kubernetes secret from credentials
-
-```bash
-kubectl create secret generic external-dns \
-  --namespace ${EXTERNALDNS_NS:-"default"} --from-file ./credentials
-```
-
-
-
-Follow the steps under [Deploy ExternalDNS](#deploy-externaldns) using either RBAC or non-RBAC.  Make sure to uncomment the section that mounts volumes, so that the credentials can be mounted.
 
 ### IAM Roles for Service Accounts
 
@@ -166,7 +100,7 @@ aws eks describe-cluster --name $EKS_CLUSTER_NAME \
 
 #### Associate OIDC to cluster
 
-Configure the cluster with an OIDC provider and add support for [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) ([IAM roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)).
+Configure the cluster with  an OIDC provider and add support for [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) ([IAM roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)).
 
 If you used `eksctl` to provision the EKS cluster, you can update it with the following command:
 
@@ -196,52 +130,6 @@ eksctl create iamserviceaccount \
   --attach-policy-arn $POLICY_ARN \
   --approve
 ```
-
-##### Use aws cli with any EKS cluster
-
-Otherwise, we can do the following steps using `aws` commands (also see [Creating an IAM role and policy for your service account](https://docs.aws.amazon.com/eks/latest/userguide/create-service-account-iam-policy-and-role.html)):
-
-```bash
-ACCOUNT_ID=$(aws sts get-caller-identity \
-  --query "Account" --output text)
-OIDC_PROVIDER=$(aws eks describe-cluster --name $EKS_CLUSTER_NAME \
-  --query "cluster.identity.oidc.issuer" --output text | sed -e 's|^https://||')
-
-cat <<-EOF > trust.json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "Federated": "arn:aws:iam::$ACCOUNT_ID:oidc-provider/$OIDC_PROVIDER"
-            },
-            "Action": "sts:AssumeRoleWithWebIdentity",
-            "Condition": {
-                "StringEquals": {
-                    "$OIDC_PROVIDER:sub": "system:serviceaccount:${EXTERNALDNS_NS:-"default"}:external-dns",
-                    "$OIDC_PROVIDER:aud": "sts.amazonaws.com"
-                }
-            }
-        }
-    ]
-}
-EOF
-
-IRSA_ROLE="external-dns-irsa-role"
-aws iam create-role --role-name $IRSA_ROLE --assume-role-policy-document file://trust.json
-aws iam attach-role-policy --role-name $IRSA_ROLE --policy-arn $POLICY_ARN
-
-ROLE_ARN=$(aws iam get-role --role-name $IRSA_ROLE --query Role.Arn --output text)
-
-# Create service account (skip is already created)
-kubectl create serviceaccount "external-dns" --namespace ${EXTERNALDNS_NS:-"default"}
-
-# Add annotation referencing IRSA role
-kubectl patch serviceaccount "external-dns" --namespace ${EXTERNALDNS_NS:-"default"} --patch \
- "{\"metadata\": { \"annotations\": { \"eks.amazonaws.com/role-arn\": \"$ROLE_ARN\" }}}"
-```
-
 
 If any part of this step is misconfigured, such as the role with incorrect namespace configured in the trust relationship, annotation pointing the the wrong role, etc., you will see errors like `WebIdentityErr: failed to retrieve credentials`. Check the configuration and make corrections.  
 
@@ -304,77 +192,11 @@ kubectl get namespaces | grep -q $EXTERNALDNS_NS || \
   kubectl create namespace $EXTERNALDNS_NS
 ```
 
-
-### Manifest (for clusters without RBAC enabled)
-
-Save the following below as `externaldns-no-rbac.yaml`.
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: external-dns
-  labels:
-    app.kubernetes.io/name: external-dns
-spec:
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: external-dns
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: external-dns
-    spec:
-      containers:
-        - name: external-dns
-          image: k8s.gcr.io/external-dns/external-dns:v0.11.0
-          args:
-            - --source=service
-            - --source=ingress
-            - --domain-filter=example.com # will make ExternalDNS see only the hosted zones matching provided domain, omit to process all available hosted zones
-            - --provider=aws
-            - --policy=upsert-only # would prevent ExternalDNS from deleting any records, omit to enable full synchronization
-            - --aws-zone-type=public # only look at public hosted zones (valid values are public, private or no value for both)
-            - --registry=txt
-            - --txt-owner-id=my-hostedzone-identifier
-          env:
-            - name: AWS_DEFAULT_REGION
-              value: us-east-1 # change to region where EKS is installed
-      # # Uncomment below if using static credentials
-      #       - name: AWS_SHARED_CREDENTIALS_FILE
-      #        value: /.aws/credentials
-      #     volumeMounts:
-      #       - name: aws-credentials
-      #         mountPath: /.aws
-      #         readOnly: true
-      # volumes:
-      #   - name: aws-credentials
-      #     secret:
-      #       secretName: external-dns
-```
-
-When ready you can deploy:
-
-```bash
-kubectl create --filename externaldns-no-rbac.yaml \
-  --namespace ${EXTERNALDNS_NS:-"default"}
-```
-
 ### Manifest (for clusters with RBAC enabled)
 
 Save the following below as `externaldns-with-rbac.yaml`.
 
 ```yaml
-# comment out sa if it was previously created
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: external-dns
-  labels:
-    app.kubernetes.io/name: external-dns
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

@@ -42,7 +42,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   rules:
-    - host: server.kubeshore.com
+    - host: ingress.kubeshore.com
       http:
         paths:
           - backend:
@@ -54,5 +54,5 @@ spec:
             pathType: Prefix
   tls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames
   - hosts:
-    - server.kubeshore.com
+    - ingress.kubeshore.com
     secretName: nginx-tls  

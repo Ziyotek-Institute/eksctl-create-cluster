@@ -5,6 +5,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"  
     cert-manager.io/cluster-issuer: letsencrypt-production
+    prometheus.io/scrape: true
 spec:
   rules:
   - host: echo-ingress.kubeshore.com
