@@ -190,3 +190,37 @@ kubectl get secrets
 NAME                  TYPE                                  DATA   AGE
 example-app-tls       kubernetes.io/tls                     2      84m
 ```
+
+```bash
+kubectl logs pod <podName> -n cert-manager
+```
+
+```bash
+kubectl describe certificate <name> -A
+kubectl describe certificaterequest <name> -A
+kubectl describe order <name> -A
+kubectl describe challenge <name> -A
+```
+
+**VALID**
+
+```bash
+devops_admin@ip-192-168-23-161:~$ kubectl get clusterissuer,certificates,certificaterequest,order,challenge -A
+NAME                                                   READY   AGE
+clusterissuer.cert-manager.io/letsencrypt-production   True    26h
+
+NAMESPACE    NAME                                         READY   SECRET           AGE
+default      certificate.cert-manager.io/echo-tls         True    echo-tls         26h
+grafana      certificate.cert-manager.io/grafana-tls      True    grafana-tls      25h
+prometheus   certificate.cert-manager.io/prometheus-tls   True    prometheus-tls   25h
+
+NAMESPACE    NAME                                                      APPROVED   DENIED   READY   ISSUER                   REQUESTOR                                         AGE
+default      certificaterequest.cert-manager.io/echo-tls-p4vg7         True                True    letsencrypt-production   system:serviceaccount:cert-manager:cert-manager   26h
+grafana      certificaterequest.cert-manager.io/grafana-tls-glvcs      True                True    letsencrypt-production   system:serviceaccount:cert-manager:cert-manager   25h
+prometheus   certificaterequest.cert-manager.io/prometheus-tls-cj5pn   True                True    letsencrypt-production   system:serviceaccount:cert-manager:cert-manager   25h
+
+NAMESPACE    NAME                                                        STATE   AGE
+default      order.acme.cert-manager.io/echo-tls-p4vg7-1733386478        valid   26h
+grafana      order.acme.cert-manager.io/grafana-tls-glvcs-4028312117     valid   25h
+prometheus   order.acme.cert-manager.io/prometheus-tls-cj5pn-959203277   valid   25h
+```
