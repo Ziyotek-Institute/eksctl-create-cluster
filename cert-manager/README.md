@@ -21,6 +21,12 @@ For this demo, I will use K8s 1.23 and `cert-manager` [v1.10.0](https://github.c
 
 ```
 
+# Install cert-manager from URL 
+
+```bash
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.10.0/cert-manager.yaml
+```
+
 # get cert-manager 
 
 cd kubernetes/cert-manager/
