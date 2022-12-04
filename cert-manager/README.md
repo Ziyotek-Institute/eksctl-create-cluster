@@ -19,16 +19,15 @@ You can find the latest release for `cert-manager` on their [GitHub Releases pag
 
 For this demo, I will use K8s 1.23 and `cert-manager` [v1.10.0](https://github.com/jetstack/cert-manager/releases/tag/v1.10.0)
 
-```
-
-# Install cert-manager from URL 
+# install cert-manager from URL
 
 ```bash
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.10.0/cert-manager.yaml
 ```
 
-# get cert-manager 
+# Or donwload cert-manager file and apply from local file  
 
+```bash
 cd kubernetes/cert-manager/
 curl -LO https://github.com/jetstack/cert-manager/releases/download/v1.10.0/cert-manager.yaml
 
